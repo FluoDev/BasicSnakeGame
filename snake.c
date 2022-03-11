@@ -3,8 +3,8 @@
 
 #include "draw_functions.h"
 
-#define HEIGHT 400
-#define WIDTH 500
+#define HEIGHT 20
+#define WIDTH 20
 
 int main(void)
 {
@@ -16,7 +16,8 @@ int main(void)
     SDL_Window *win = SDL_CreateWindow("- Basic Snake Game -",
                                        SDL_WINDOWPOS_CENTERED,
                                        SDL_WINDOWPOS_CENTERED,
-                                       HEIGHT, WIDTH, 0);
+                                       HEIGHT * CASE_SIZE,
+                                       WIDTH * CASE_SIZE, 0);
     if (win == NULL)
         goto Quit;
 
@@ -27,12 +28,28 @@ int main(void)
     // Create the snake game
     int snake_size = 3;
     int *snake = malloc(sizeof(int) * snake_size * 2);
-    int apple[2] = { 0 };
+    for (int i = 0; i < snake_size * 2; i = i + 2)
+    {
+        snake[i] = WIDTH / 2 + 2 + i / 2;
+        snake[i+1] = HEIGHT / 2;
+    }
+    int apple[2] = { WIDTH / 2 - 3, HEIGHT / 2 };
 
+    int going = 1;
+    while (going)
+    {
+        draw_snake(ren, snake, snake_size);
+        draw_apple(ren, apple);
+        SDL_RenderPresent(ren);
 
-    draw_snake(snake, snake_size);
+        
+
+        SDL_Delay(250);
+        break;
+    }
+
     
-
+    SDL_Delay(2000);
 Quit:
     // Destroy, free and quit everything
     if (win != NULL)

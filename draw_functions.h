@@ -1,6 +1,9 @@
 #ifndef DRAW_FUNC_H
 #define DRAW_FUNC_H
 
-extern void draw_snake(int *snake, int sn_size);
+#define CASE_SIZE 25
+
+extern void draw_snake(SDL_Renderer *ren, int *snake, int sn_size);
+extern void draw_apple(SDL_Renderer *ren, int apple[2]);
 
 #endif
