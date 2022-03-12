@@ -6,6 +6,35 @@
 #define HEIGHT 20
 #define WIDTH 20
 
+int *copy_list(int *list, int size)
+{
+    /*
+        Copy a int list into another one.
+    */
+    int *res = malloc(sizeof(int) * size);
+    for (int i = 0; i < size; ++i)
+    {
+        res[i] = list[i];
+    }
+    return res;
+}
+
+void snake_move(int *snake, int sn_size, int dir[2])
+{
+    /*
+        Make the snake move in the right direction.
+    */
+    int *old_sn = copy_list(snake, sn_size * 2);
+    snake[0] = old_sn[0] + dir[0]; snake[1] = old_sn[1] + dir[1]; 
+    for (int i = 0; i < sn_size * 2 - 2; i = i + 2)
+    {
+        snake[2 + i] = old_sn[i];
+        snake[2 + i + 1] = old_sn[i + 1];
+    }
+    free(old_sn);
+}
+
+
 int main(void)
 {
     // Init SDL
@@ -34,18 +63,22 @@ int main(void)
         snake[i+1] = HEIGHT / 2;
     }
     int apple[2] = { WIDTH / 2 - 3, HEIGHT / 2 };
+    int direction[2] = { -1, 0 };
 
+
+    // Game loop
     int going = 1;
-    while (going)
+    for (int i = 0; i < 5; ++i)
     {
-        draw_snake(ren, snake, snake_size);
+        // Draw the game
+        clear_screen(ren);
         draw_apple(ren, apple);
+        draw_snake(ren, snake, snake_size);
         SDL_RenderPresent(ren);
 
-        
+        snake_move(snake, snake_size, direction);
 
         SDL_Delay(250);
-        break;
     }
 
     
@@ -57,7 +90,8 @@ Quit:
     if (ren != NULL)
         SDL_DestroyRenderer(ren);
 
-    free(snake);
+    if (snake != NULL)
+        free(snake);
 
     SDL_Quit();
     return 0;

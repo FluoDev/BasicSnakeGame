@@ -3,6 +3,12 @@
 
 #include "draw_functions.h"
 
+void clear_screen(SDL_Renderer *ren)
+{   
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);   
+}
+
 void draw_snake(SDL_Renderer *ren, int *snake, int sn_size)
 {
     SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
