@@ -1,22 +1,22 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
-#define CASE_SIZE 25
-#define HEIGHT 20
-#define WIDTH 20
+#define CASE_SIZE 20
+#define HEIGHT 25
+#define WIDTH 25
 
 /*
     Enum & Struct defintions
 */
 typedef enum {
+    NONE,
     UP,
     LEFT,
     RIGHT,
-    DOWN,
-    NONE
+    DOWN
 } SnDirection;
 
-typedef struct T_SnakePart {
+typedef struct T_SnTip {
     int x, y;
     SnDirection dir;
 } SnTip;
@@ -26,6 +26,9 @@ typedef struct T_SnakePart {
 */
 void apply_movement(SnTip* sn)
 {
+    /*
+        Move a tip of the snake in the right direction
+    */
     if (sn->dir == UP)
     {
         sn->y = sn->y + -1;
@@ -47,37 +50,66 @@ void apply_movement(SnTip* sn)
     }
 }
 
-void move_snake(SnDirection* grid, SnTip* snHead, SnTip* snTail)
+void move_head(SnDirection* grid, SnTip* snHead)
 {
-    // Move Head
+    /*
+        Move the head of the snake
+    */
     apply_movement(snHead);
     grid[WIDTH * snHead->x + snHead->y] = snHead->dir;
-    // Move Tail
+}
+
+void move_tail(SnDirection* grid, SnTip* snTail)
+{
+    /*
+        Move the tail of the snake
+    */
     grid[WIDTH * snTail->x + snTail->y] = NONE;
     apply_movement(snTail);
+    if (grid[WIDTH * snTail->x + snTail->y] != NONE)
+        snTail->dir = grid[WIDTH * snTail->x + snTail->y];
+}
+
+void move_apple(SnDirection* grid, int apple[2])
+{
+    /*
+        Move the apple to a new random position
+    */
+   // TODO: Add random position
+    apple[0] = 2; apple[1] = 2;
+}
+
+int check_hit_walls(SnDirection* grid, SnTip snHead)
+{
+    return snHead.x < 0 || snHead.y < 0 || snHead.x >= WIDTH || snHead.y >= HEIGHT;
 }
 
 /*
     Drawing functions defintions
 */
-
 void clear_screen(SDL_Renderer *ren)
 {   
+    /*
+        Clear the screen
+    */
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
     SDL_RenderClear(ren);   
 }
 
 void draw_snake(SDL_Renderer *ren, SnDirection* grid)
 {
+    /*
+        Draw the whole snake
+    */
     SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
     for (int x = 0; x < WIDTH; x++)
     {
         for (int y = 0; y < HEIGHT; y++)
         {
-            printf("%d %d %d\n", x, y, grid[WIDTH * x + y]);
-            if (grid[WIDTH * x + y] == LEFT)
+            // printf("%d %d %d\n", x, y, grid[WIDTH * x + y]);
+            if (grid[WIDTH * x + y] != NONE)
             {
-                printf("%d %d\n", x, y);
+                // printf("%d %d\n", x, y);
                 SDL_Rect rect = {
                     x * CASE_SIZE, y * CASE_SIZE,
                     CASE_SIZE, CASE_SIZE
@@ -90,6 +122,9 @@ void draw_snake(SDL_Renderer *ren, SnDirection* grid)
 
 void draw_apple(SDL_Renderer *ren, int apple[2])
 {
+    /*
+        Draw the apple
+    */
     SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
     SDL_Rect rect = {
         apple[0] * CASE_SIZE, apple[1] * CASE_SIZE,
@@ -123,18 +158,32 @@ int main(void)
         goto Quit;
 
     // Create the snake game
-    grid = malloc(sizeof(SnDirection) * HEIGHT * WIDTH);
+    grid = malloc(sizeof(SnDirection) * HEIGHT * WIDTH); // The grid that contains the snake
     memset(grid, NONE, sizeof(SnDirection) * HEIGHT * WIDTH);
-    SnTip snHead = { WIDTH / 2 + 2, HEIGHT / 2, LEFT };
-    SnTip snTail = { WIDTH / 2 + 5, HEIGHT / 2, LEFT };
-    int apple[2] = { WIDTH / 2 - 2, HEIGHT / 2 };
+    SnTip snHead = { WIDTH / 2 + 2, HEIGHT / 2, LEFT }; // The tips of the snake
+    SnTip snTail = { WIDTH / 2 + 4, HEIGHT / 2, LEFT };
+    grid[WIDTH * snHead.x + snHead.y] = snHead.dir;
+    int apple[2] = { WIDTH / 2 - 2, HEIGHT / 2 }; // The position of the apple
 
     // Game loop
-    int going = 1;
-    for (int i = 0; i < 7; ++i)
+    while (1)
     {
         // Update game
-        move_snake(grid, &snHead, &snTail);
+        move_head(grid, &snHead);
+        if (snHead.x == apple[0] && snHead.y == apple[1])
+        {
+            move_apple(grid, apple);
+        }
+        else
+        {
+            move_tail(grid, &snTail);
+        }
+
+        // Check end
+        if (check_hit_walls(grid, snHead))
+        {
+            break;
+        }        
 
         // Draw the game
         clear_screen(ren);
@@ -144,7 +193,6 @@ int main(void)
 
         SDL_Delay(500);
     }
-
     
     SDL_Delay(2000);
 Quit:
