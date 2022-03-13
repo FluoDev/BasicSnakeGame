@@ -55,8 +55,8 @@ void move_head(SnDirection* grid, SnTip* snHead)
     /*
         Move the head of the snake
     */
-    apply_movement(snHead);
     grid[WIDTH * snHead->x + snHead->y] = snHead->dir;
+    apply_movement(snHead);
 }
 
 void move_tail(SnDirection* grid, SnTip* snTail)
@@ -84,6 +84,11 @@ int check_hit_walls(SnDirection* grid, SnTip snHead)
     return snHead.x < 0 || snHead.y < 0 || snHead.x >= WIDTH || snHead.y >= HEIGHT;
 }
 
+int check_hit_itself(SnDirection* grid, SnTip snHead)
+{
+    return grid[WIDTH * snHead.x + snHead.y] != NONE;
+}
+
 /*
     Drawing functions defintions
 */
@@ -106,10 +111,8 @@ void draw_snake(SDL_Renderer *ren, SnDirection* grid)
     {
         for (int y = 0; y < HEIGHT; y++)
         {
-            // printf("%d %d %d\n", x, y, grid[WIDTH * x + y]);
             if (grid[WIDTH * x + y] != NONE)
             {
-                // printf("%d %d\n", x, y);
                 SDL_Rect rect = {
                     x * CASE_SIZE, y * CASE_SIZE,
                     CASE_SIZE, CASE_SIZE
@@ -139,6 +142,7 @@ void draw_apple(SDL_Renderer *ren, int apple[2])
 int main(void)
 {
     SnDirection *grid = NULL;
+    SDL_Event event;
 
     // Init SDL
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -161,13 +165,33 @@ int main(void)
     grid = malloc(sizeof(SnDirection) * HEIGHT * WIDTH); // The grid that contains the snake
     memset(grid, NONE, sizeof(SnDirection) * HEIGHT * WIDTH);
     SnTip snHead = { WIDTH / 2 + 2, HEIGHT / 2, LEFT }; // The tips of the snake
-    SnTip snTail = { WIDTH / 2 + 4, HEIGHT / 2, LEFT };
+    SnTip snTail = { WIDTH / 2 + 7, HEIGHT / 2, LEFT };
     grid[WIDTH * snHead.x + snHead.y] = snHead.dir;
     int apple[2] = { WIDTH / 2 - 2, HEIGHT / 2 }; // The position of the apple
 
     // Game loop
     while (1)
     {
+        // Manage key pressed
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                goto Quit;
+            }
+            else if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.keysym.sym == SDLK_z && snHead.dir != DOWN)
+                    snHead.dir = UP;
+                else if (event.key.keysym.sym == SDLK_q && snHead.dir != RIGHT)
+                    snHead.dir = LEFT;
+                else if (event.key.keysym.sym == SDLK_s && snHead.dir != UP)
+                    snHead.dir = DOWN;
+                else if (event.key.keysym.sym == SDLK_d && snHead.dir != LEFT)
+                    snHead.dir = RIGHT;
+            }
+        }
+
         // Update game
         move_head(grid, &snHead);
         if (snHead.x == apple[0] && snHead.y == apple[1])
@@ -180,7 +204,7 @@ int main(void)
         }
 
         // Check end
-        if (check_hit_walls(grid, snHead))
+        if (check_hit_walls(grid, snHead) || check_hit_itself(grid, snHead))
         {
             break;
         }        
