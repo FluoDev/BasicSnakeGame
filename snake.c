@@ -1,9 +1,17 @@
 #include <stdio.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 
 #define CASE_SIZE 20
 #define HEIGHT 25
 #define WIDTH 25
+
+/*================================================================
+
+    Just a little snake game, many things still need to be fixed
+       and/or upgraded, but who cares? I have the big flemme.
+
+  ================================================================*/
 
 /*
     Enum & Struct defintions
@@ -70,13 +78,23 @@ void move_tail(SnDirection* grid, SnTip* snTail)
         snTail->dir = grid[WIDTH * snTail->x + snTail->y];
 }
 
+int randint(int min, int max)
+{
+    /*
+        Returns random number between min and max
+    */
+    return rand() / (RAND_MAX + 1.) * (max - min) + min;
+}
+
 void move_apple(SnDirection* grid, int apple[2])
 {
     /*
         Move the apple to a new random position
     */
-   // TODO: Add random position
-    apple[0] = 2; apple[1] = 2;
+    apple[0] = randint(0, WIDTH);
+    apple[1] = randint(0, HEIGHT);
+    if (grid[WIDTH * apple[0] + apple[1]] != NONE)
+        move_apple(grid, apple);
 }
 
 int check_hit_walls(SnDirection* grid, SnTip snHead)
@@ -160,6 +178,12 @@ int main(void)
     SDL_Renderer *ren = SDL_CreateRenderer(win, -1, 0);
     if (ren == NULL)
         goto Quit;
+    
+    // Initialize random number generation
+    time_t t;
+    if (time(&t) == (time_t)-1)
+        goto Quit;
+    srand((unsigned)t);
 
     // Create the snake game
     grid = malloc(sizeof(SnDirection) * HEIGHT * WIDTH); // The grid that contains the snake
