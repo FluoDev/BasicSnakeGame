@@ -1,45 +1,113 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
-#include "draw_functions.h"
-
+#define CASE_SIZE 25
 #define HEIGHT 20
 #define WIDTH 20
 
-int *copy_list(int *list, int size)
+/*
+    Enum & Struct defintions
+*/
+typedef enum {
+    UP,
+    LEFT,
+    RIGHT,
+    DOWN,
+    NONE
+} SnDirection;
+
+typedef struct T_SnakePart {
+    int x, y;
+    SnDirection dir;
+} SnTip;
+
+/*
+    Game Functions defintions
+*/
+void apply_movement(SnTip* sn)
 {
-    /*
-        Copy a int list into another one.
-    */
-    int *res = malloc(sizeof(int) * size);
-    for (int i = 0; i < size; ++i)
+    if (sn->dir == UP)
     {
-        res[i] = list[i];
+        sn->y = sn->y + -1;
     }
-    return res;
+    else if
+    (sn->dir == DOWN)
+    {
+        sn->y = sn->y + 1;
+    }
+    else if
+    (sn->dir == LEFT)
+    {
+        sn->x = sn->x + -1;
+    }
+    else if
+    (sn->dir == RIGHT)
+    {
+        sn->x = sn->x + 1;
+    }
 }
 
-void snake_move(int *snake, int sn_size, int dir[2])
+void move_snake(SnDirection* grid, SnTip* snHead, SnTip* snTail)
 {
-    /*
-        Make the snake move in the right direction.
-    */
-    int *old_sn = copy_list(snake, sn_size * 2);
-    snake[0] = old_sn[0] + dir[0]; snake[1] = old_sn[1] + dir[1]; 
-    for (int i = 0; i < sn_size * 2 - 2; i = i + 2)
-    {
-        snake[2 + i] = old_sn[i];
-        snake[2 + i + 1] = old_sn[i + 1];
-    }
-    free(old_sn);
+    // Move Head
+    apply_movement(snHead);
+    grid[WIDTH * snHead->x + snHead->y] = snHead->dir;
+    // Move Tail
+    grid[WIDTH * snTail->x + snTail->y] = NONE;
+    apply_movement(snTail);
 }
 
+/*
+    Drawing functions defintions
+*/
 
+void clear_screen(SDL_Renderer *ren)
+{   
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);   
+}
+
+void draw_snake(SDL_Renderer *ren, SnDirection* grid)
+{
+    SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
+    for (int x = 0; x < WIDTH; x++)
+    {
+        for (int y = 0; y < HEIGHT; y++)
+        {
+            printf("%d %d %d\n", x, y, grid[WIDTH * x + y]);
+            if (grid[WIDTH * x + y] == LEFT)
+            {
+                printf("%d %d\n", x, y);
+                SDL_Rect rect = {
+                    x * CASE_SIZE, y * CASE_SIZE,
+                    CASE_SIZE, CASE_SIZE
+                };
+                SDL_RenderFillRect(ren, &rect);
+            } 
+        }
+    }
+}
+
+void draw_apple(SDL_Renderer *ren, int apple[2])
+{
+    SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+    SDL_Rect rect = {
+        apple[0] * CASE_SIZE, apple[1] * CASE_SIZE,
+        CASE_SIZE, CASE_SIZE
+    };
+    SDL_RenderFillRect(ren, &rect);
+}
+
+/*
+    Main program part
+*/
 int main(void)
 {
+    SnDirection *grid = NULL;
+
     // Init SDL
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-        goto Quit;
+        return 1;
 
     // Create the window and the renderer
     SDL_Window *win = SDL_CreateWindow("- Basic Snake Game -",
@@ -55,30 +123,26 @@ int main(void)
         goto Quit;
 
     // Create the snake game
-    int snake_size = 3;
-    int *snake = malloc(sizeof(int) * snake_size * 2);
-    for (int i = 0; i < snake_size * 2; i = i + 2)
-    {
-        snake[i] = WIDTH / 2 + 2 + i / 2;
-        snake[i+1] = HEIGHT / 2;
-    }
-    int apple[2] = { WIDTH / 2 - 3, HEIGHT / 2 };
-    int direction[2] = { -1, 0 };
-
+    grid = malloc(sizeof(SnDirection) * HEIGHT * WIDTH);
+    memset(grid, NONE, sizeof(SnDirection) * HEIGHT * WIDTH);
+    SnTip snHead = { WIDTH / 2 + 2, HEIGHT / 2, LEFT };
+    SnTip snTail = { WIDTH / 2 + 5, HEIGHT / 2, LEFT };
+    int apple[2] = { WIDTH / 2 - 2, HEIGHT / 2 };
 
     // Game loop
     int going = 1;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 7; ++i)
     {
+        // Update game
+        move_snake(grid, &snHead, &snTail);
+
         // Draw the game
         clear_screen(ren);
         draw_apple(ren, apple);
-        draw_snake(ren, snake, snake_size);
+        draw_snake(ren, grid);
         SDL_RenderPresent(ren);
 
-        snake_move(snake, snake_size, direction);
-
-        SDL_Delay(250);
+        SDL_Delay(500);
     }
 
     
@@ -90,8 +154,8 @@ Quit:
     if (ren != NULL)
         SDL_DestroyRenderer(ren);
 
-    if (snake != NULL)
-        free(snake);
+    if (grid != NULL)
+        free(grid);
 
     SDL_Quit();
     return 0;

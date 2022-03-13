@@ -1,5 +1,6 @@
 # Build files
-./Snake
+snake
+.vscode
 
 # Prerequisites
 *.d
